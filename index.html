@@ -1,0 +1,181 @@
+﻿
+
+
+<!DOCTYPE html>
+<html>
+<head>
+	<link href="style.css" rel="stylesheet">
+	<title>WELCOME to C&B</title>
+	
+
+  <link rel="shortcut icon" href="{Favicon}">
+  <link href="https://fonts.googleapis.com/css?family={text:url google font}" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family={text:text google font}" rel="stylesheet">
+ 
+  <style>
+  body {
+  background-image: url('http://getwallpapers.com/wallpaper/full/a/c/7/312519.jpg');
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: 100% 100%;
+}
+
+ a {
+    color: {color:color 1};
+    text-decoration: none;
+  }
+  a:hover {
+    color: {color:color 2};
+  }
+  div#moved {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    -webkit-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+    color: {color:text};
+    width: 35vw;
+    min-width: 300px;
+  }
+  div.url {
+    font-size: {text:blog titles font size};
+    letter-spacing: 2px;
+    font-family: {block:Ifurlgooglefont}'{text:url google font}', {/block:Ifurlgooglefont}{font:url};
+  }
+  div.text {
+    font-family: {block:Iftextgooglefont}'{text:text google font}', {/block:Iftextgooglefont}{font:text};
+    font-size: {text:text font size};
+  }
+  div#move {
+    margin: 1em 0 0.5em;
+  }
+  div#note {
+  position: absolute;
+    top: 50%;
+    left: 45%;
+    margin-top: 0.8em;
+    font-size: {text:note font size};
+  }
+  .center {
+    text-align: center;
+  }
+  .cascade div#move {
+    text-align: center;
+  }
+  .cascade div#new {
+    text-align: right;
+  }
+  
+  }
+  div#load {
+    position: absolute;
+    bottom: -3em;
+    height: 5px;
+    width: 1%;
+    background: {color:loading bar};
+  }
+  {block:Ifhidetumblrcontrols}
+  iframe.tmblr-iframe {
+    display: none;
+  }
+  {/block:Ifhidetumblrcontrols}
+</style>
+
+
+</head>
+<body>
+ <div id="moved" class="{select:text align}">
+    <center><div id="orig" class="url"><center><h1>WELCOME to THE AMAZING COWS 'n' BULLS </h1></div>
+    <div id="move" class="text">{good luck to you}</div>
+    <div id="new" class="url"><b><a href="https://www.dairymoos.com/interesting-facts-about-cows/">{want some MOOving cow facts?}</b></a></div></center>
+    
+  </div>
+ 
+	
+	<div id="content">
+		<div id="form">
+			<div id="errors">	
+			</div>
+			<div id="note" class="{select:text align}">
+			<center><form name="adminsProfile" action="http://localhost/cgi-bin/first.cgi" method="POST" id="myform">
+				<input type="text" name="Code" class="form_text" id="code">
+				<!--<input type="text" name="Codse" class="form_text"> -->
+				<button type="button">Guess</button></center>
+			</form>
+		<div>
+	</div>
+	</form>
+</body>
+<script type="text/javascript">
+	function chk(){
+		var s = document.getElementById("code").value;
+		var errors = document.getElementsByClassName('error');
+		var ediv = document.getElementById('errors');
+		var form = document.getElementsByTagName('form')[0];
+		ediv.innerHTML = "";
+
+		var elen = document.createElement('div');
+		elen.className = "error";
+		elen.innerHTML = "Invalid line length";
+
+		var enms = document.createElement('div');
+		enms.className = "error";
+		enms.innerHTML = "Invalid numbers";
+
+		var eunq = document.createElement('div');
+		eunq.className = "error";
+		eunq.innerHTML = "Non-unique numbers";
+
+		var flag=true;
+
+		if(s.length != 4){
+			ediv.append(elen);
+			flag = false;
+		}
+
+		var f = false;
+		for(var i=0;i <= s.length-1;i++){
+			if((s.charAt(i)<'1')||(s.charAt(i)>'6'))
+				f = true;
+		}
+
+		if(f){
+			ediv.append(enms);
+			flag = false;
+		}
+
+		f = false;
+		var c = new Array(s.length);
+		for(var i=0;i <= s.length-1;i++){
+			c[i] = 0;
+		}
+
+		for(var i=0;i <= s.length-1;i++){
+			if(c[s.charAt(i)-1] == 1){
+				f = true;
+			}else{
+				c[s.charAt(i)-1] = 1;
+			}
+		}
+		if(f){
+			ediv.append(eunq);
+			flag = false;
+		}
+
+		if(flag){
+			form.submit()
+		}
+
+	}
+
+	var b = document.getElementsByTagName('button')[0];	
+	b.addEventListener('click', chk);
+
+	document.addEventListener('keydown', function(event){
+        if(event.keyCode == 13) {
+        	event.preventDefault();
+          	chk();
+      }
+  	})
+</script>
+</html>

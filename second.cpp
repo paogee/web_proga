@@ -3,30 +3,44 @@
 #include <cstring>
 #include <ctime>
 #include <fstream>
-
 using namespace std;
 
-class List {//is the exct same as the one in the 2nd Task
+class Game{//similarto the one in first.cpp but w some changes
+public:
+	Game(); //get the user guess
+	~Game();//destructorrrrr
+	void play(); //game and forming the html doc
+private:
+	void javaProv(); //local send try checker
+	char * parse(char * url); //url parsing
+	char * check(char *a, char *c); //try ckecker
+	void win(); //if we won
+	void lose(); //if we lost + the hint output
+	void printfile(const char *path); //adding the ckecking script
+	char *answer; //cor answer
+};
+
+class List {//Вtaken from the 2Task
 public:
 	List() { head = NULL; };
 	~List();
-	struct node {//pair key_value
-		char* key;	 //k
-		char* value; //val
-		node *next;  //pointer to the next elem
+	struct node {
+		char* key;	 //key
+		char* value; //value
+		node *next;  //ptr to next
 	};
-	node* getHead() const;  //get the lists head
-	int empty() const;	//check if empty
-	void addHead(const char* key, const char* value);	//allocate the head
-	node* insert(node* n, const char* key, const char* value); // adding elem to the list
-	void print(); //outprinting
+	node* getHead() const;  //get the head of list
+	int empty() const;	//empty cheker
+	void addHead(const char* key, const char* value);	//allocate head
+	node* insert(node* n, const char* key, const char* value); // adding element to list
+	void print(); //print
 private: 
 	node* head;
 };
 
 class parser {//from the 2Task but a lil changed
 public:
-	parser(); //парсер
+	parser(); //parser
 	List::node * getdata() const;
 private:
 	char *query();
@@ -35,20 +49,23 @@ private:
 	List list; //our list
 };
 
-class Game{//game class w the game start, writing to files, new file creation,result outout, string creation
+struct fileInfo{//structure of the fiel. its the cor answer and try count
+	char key[5];
+	int hintsCount;
+};
+
+
+class history{ //class to work w hints
 public:
-	Game(); //get the user guess
-	~Game(); //destructorrrrr
-	void play(); //game and forming the html doc
+	history(const char * pi, const char * ph); //saving the path to the files with information and the hint
+	fileInfo * getInfo(); //get info from the file
+	void addhint(char *a, char *h); //дadding hint "h" and answer "a"
+	void update(fileInfo * i); //update the info
+	void print(int count); //print the hints
+	~history(); //deleting the paths to files
 private:
-	void javaProv(); //local send try checker
-	char * gen(); //гkey generating
-	char * check(char *a, char *c); //guess checker
-	void win(); //if WON
-	void lose(); //if LOST
-	void newfile(char * key, char * a, char * hint); //create new file w the cor answer and try count there
-	void printfile(const char * p);//outprint file
-	char *answer; //our answer
+	char * path_to_info, //path to the info.txt
+		* path_to_hints; //path to the hints.txt
 };
 
 int main(){//create the page and working w url
@@ -61,45 +78,48 @@ int main(){//create the page and working w url
 	cout << "<body>\n";
 	
 	Game bestGame;
-	bestGame.play();	
+	bestGame.play();
 	
 	cout << "</body>\n";
 	cout << "</html>\n";
-	
-	return 0;
 }
 
 Game::Game(){//constructor. Create tho obj of class Game
-	parser p;//читаем URL
+	parser p;//read our URL
 	List::node * temp = p.getdata();//write to list cs "p" will be deleted at the end of func
 	answer = new char[strlen(temp->value)+1];//create the answer string
 	strcpy(answer, temp->value);//write to the answer string
-	//all of the above needed to not hav any problems with memory
+		//all of the above needed to not hav any problems with memory
 }
 
-Game::~Game(){//destructor to delete the mem used by answer
+Game::~Game(){//estructor to delete the mem used by answer
 	delete []answer;
 }
 
-void Game::play(){//first try START
-	char * code = gen();//гgenerate the cor answer
+void Game::play(){//new try START
+	history Hints("main.txt", "hints.txt");//open hint file
 	
-	if(!strcmp(answer, code))//еif u are VERY LUCKY  and won from the 1st try, output win
+	fileInfo * hintsInfo = Hints.getInfo();//get the try count and cor answer
+	char * code = hintsInfo->key;//get the cor answer from the file
+	
+	if(!strcmp(answer, code))//еif u are VERY LUCKY  and won output win
 		win();
 	else{
-		lose();//if not then output lost and rewrite files and the html
-		char * hint = check(answer, code);//нusing our guess generate the hint for the next try
-		cout << "<center>Your tries so far:</center><br>\n";//outout the hint into html
-		cout << "<center> " << answer << " " << hint << "</center>\n";//output the hint to html
-		newfile(code, answer,  hint);//create 2 new files to have the cor answer and try count in 1st and hints and try history in the 2nd.
+		lose();//else output loss
+		char * hint = check(answer, code);//generating the hin
+		cout << "<center>Your tries so far:</center><br>\n";
+		int count = (hintsInfo->hintsCount)++;//raise the ty count
+		Hints.addhint(answer, hint);//дadd the hint generated to file
+		Hints.update(hintsInfo);//renew the info in info.txt
+		Hints.print(count+1);//write the try to file
 		delete hint;//delete the hint since we finished w it
 	}
 	
-	delete code;//уdelete cor answer since we finished w it
-	javaProv();//launch the next try check
+	delete hintsInfo;//delete date from info cs we finishe w it
+	javaProv();//launch the check of the sent form
 }
 //Java Script error checker
-void Game::javaProv(){//to check the tries sent locally
+void Game::javaProv(){//понятно тут все
 	cout<< "<script type=\"text/javascript\">\n";
 	cout<< "function chk(){\n";
 		cout<< "var s = document.getElementById(\"code\").value;\n"; //chose the field to check
@@ -177,87 +197,114 @@ void Game::javaProv(){//to check the tries sent locally
 cout<< "</script>\n";
 }
 
-char * Game::gen(){//сgenerate the correct answer for the hint
-	char *code = new char[5], *ptr = code;//string of cor answer + 0 elem, ptr
-	int carr[6] = {0, 0, 0, 0, 0, 0};
-	int count = 4, i = 0;
-	
-	srand(time(NULL));//the randomization of answers
-	
-	while(count){//generate the cor answer
-		i = rand() % 6;//the work of random
-		
-		if(carr[i])//if 1 all is good
-			continue;
-			
-		carr[i] = 1;
-		*(ptr++) = '0' + 1 + i;
-		count --;//traverse 4 times
+char * Game::parse(char * url){//parsing the URL
+	char buf[5], *ptr = buf;
+	while(*url != '=')
+		url++;
+	url ++;
+	while(*url != '\0'){
+		*(ptr++) = *(url++);
 	}
-	*ptr = '\0';//add termination elem
-	
-	return code;//cor answer
+		
+	buf[4] = '\0';
+	char * temp = new char(5);
+	strcpy(temp, buf);
+	return temp;
 }
 
-char * Game::check(char *a, char *c){//create string for hint
+char * Game::check(char *a, char *c){//generating hint and comparing current guess to cor answer
 	char *temp = new char[5], *ptr = temp, *tmp = NULL, *atemp = a;
-	while(*a != '\0'){//till the string aint empty
-		tmp = strchr(c, *a);//get the ptr to the 1st entering of the symbol into string
-		if(tmp - c == a - atemp)//if num is in its place
-			*(ptr++) = 'B';//then its a BULL
+	while(*a != '\0'){
+		tmp = strchr(c, *a);
+		if(tmp - c == a - atemp)
+			*(ptr++) = 'B';
 		else
-			if(tmp != NULL)//if it aint in its place but in the string 
-				*(ptr++) = 'C';//its a COW
-		a++;//if itр not in the string we output nothing
+			if(tmp != NULL)
+				*(ptr++) = 'C';
+		a++;
 	}
 	
-	*ptr='\0';//adding the termination elem to  end the string
+	*ptr='\0';
 	
 	return temp;
 }
 
-
-// убрать временную переменную
-//чтоб сразу передавался лист
-//переписать подсказки и генерация правильного ответа с помощью вложеных циклов
-
-//2 задача убрать временную переменную
-//перенести константу 500 в класс
-//проверка на фокусировке а не на отправлении формы
-
-
-void Game::win(){//VICTORY :D
+void Game::win(){
 	cout << "<center><h1>!!!!VICTORY!!!!</h1></center>\n";
 	cout << "<img src='https://i.dlpng.com/static/png/6413508_preview.png'>";
 }
 
-void Game::lose(){//LOSER :(
-	cout << "<center><h2>oh no no...Wanna try again~?</h2></center><br>\n";
+void Game::lose(){
+	cout << "<center><h2>oh no no...Wanna try again~?<h2></center><br>\n";
 	cout << "<div id=\"errors\">\n\n</div\n>";
 	cout <<"<center><form name=\"adminsProfile\" action=\"http://localhost/cgi-bin/second.cgi\" method=\"POST\">\n \t<input type=\"text\" name=\"Code\" class=\"form_text\" id=\"code\">\n <button type=\"button\">Send</button>\n</form></center>\n";
 }
 
-void Game::newfile(char *key, char * a, char *hint){//generating file and writing all of info threre 4 future work
-	ofstream info("main.txt", ios_base::out | ios_base::trunc);//file has the cor answer and the try count
-	info << key << endl;//правильный ответ
-	info << 1 << endl;//попытка 1. Так как это первая игра
-	info.close();//закрываем файл для записи
+history::history(const char *pi, const char *ph){//to know the way to the paths cs used many times
+	int size = strlen(pi);//path to info.txt
+	path_to_info = new char[size+1];
+	strcpy(path_to_info, pi);
 	
-	ofstream hints("hints.txt", ios_base::out | ios_base::trunc);//file for hints and our guesses
-	hints << a << " " << hint << endl;//guess : hint
-	hints.close();//cansel the file 
+	size = strlen(ph);//path to hints.txt
+	path_to_hints = new char[size+1];
+	strcpy(path_to_hints, ph);
 }
 
-void Game::printfile(const char * path){//file output
+history::~history(){//since we allocated some mem for the paths we need to free it now
+	delete []path_to_info;
+	delete []path_to_hints;
+}
+
+fileInfo * history::getInfo(){//get the info from the info.txt
+	ifstream hints(path_to_info);//use the method above
+	fileInfo * temp = new fileInfo;//temp var for the info
+	hints >> temp->key;//write the correct answer
+	hints >> temp->hintsCount;//write the try count
+	hints.close();//close the file
+	return temp;//return for further work
+}
+
+void history::addhint(char * a, char *c){//adding new hint to hints.txt
+	fstream hints(path_to_hints, ios_base::app);//open file
+	hints << a << " "<< c << endl;//write the hint
+	hints.close();//close the file
+}
+
+void history::update(fileInfo * i){//rewrite the info file so the hints would work
+	ofstream info("main.txt", ios_base::out | ios_base::trunc);//open file
+	info << i->key << endl;//just rewriting not cjanging it
+	info << i->hintsCount << endl;//renewed count write to file
+	info.close();//close the file
+}
+
+void history::print(int count){//print to file, printing LAST 10 (cs the rules)
+	ifstream hints(path_to_hints);
+	int j = count - 10, i;
+	char buff[10];
+	for( i = 0; i < j; i++)
+		hints.getline(buff, 10);
+	
+	if(count > 10)
+		count = 10;
+		
+	for(i=0; i<count;i++){
+		hints.getline(buff, 10);
+		cout << "<center>" <<  buff << "<center><br>\n";
+	}
+	
+	hints.close();
+}
+
+void Game::printfile(const char * path){//outprint file
 	ifstream f(path);
 	char buf[100];
 	while(!f.eof()){
 		f.getline(buf,99);
-		cout << buf << '\n';
+		cout << "<center>" << buf << "</center>" <<'\n';
 	}
 	f.close();
 }
-//ФУНКЦИИ ИЗ ЗАДАЧИ НОМЕР 2
+//ФУНКЦИИ ИЗ ВТОРОЙ ЗАДАЧИ
 char* parser::post() { //func returning our url if using POST method
 	char* str = getenv("CONTENT_LENGTH");
 	int size = atoi(str);
@@ -285,7 +332,7 @@ char* parser::query() { //method checking query
 		return post();
 }
 
-//ЧУТКА ПЕРЕДЕЛАННЫЙ ПАРСЕР
+
 parser::parser() {
 	int i = 0;
 	char value[100]; //value buffer
@@ -351,11 +398,11 @@ parser::parser() {
 	delete str;
 }
 
-List::node * parser::getdata() const{//to know the head necessary to strat the game
+List::node * parser::getdata() const{
 	return list.getHead();
 }
 
-//using destructor to delete head and free the mem
+
 List::~List()
 {
 	if(head != NULL){
